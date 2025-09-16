@@ -17,23 +17,31 @@ function PixelTransition({
   const delayedCallRef = useRef(null);
 
   const [isActive, setIsActive] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
-  const isTouchDevice =
-    'ontouchstart' in window ||
-    navigator.maxTouchPoints > 0 ||
-    window.matchMedia('(pointer: coarse)').matches;
-
+  // ✅ Detect touch device safely on client only
   useEffect(() => {
-    const pixelGridEl = pixelGridRef.current;
-    if (!pixelGridEl) return;
+    if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+      const touch =
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        window.matchMedia('(pointer: coarse)').matches;
 
+      setIsTouchDevice(touch);
+    }
+  }, []);
+
+  // ✅ Create pixel grid only after mount
+  useEffect(() => {
+    if (!pixelGridRef.current) return;
+
+    const pixelGridEl = pixelGridRef.current;
     pixelGridEl.innerHTML = '';
 
     for (let row = 0; row < gridSize; row++) {
       for (let col = 0; col < gridSize; col++) {
         const pixel = document.createElement('div');
-        pixel.classList.add('pixelated-image-card__pixel');
-        pixel.classList.add('absolute', 'hidden');
+        pixel.classList.add('pixelated-image-card__pixel', 'absolute', 'hidden');
         pixel.style.backgroundColor = pixelColor;
 
         const size = 100 / gridSize;
@@ -47,7 +55,7 @@ function PixelTransition({
     }
   }, [gridSize, pixelColor]);
 
-  const animatePixels = (activate) => {
+  const animatePixels = (activate: boolean) => {
     setIsActive(activate);
 
     const pixelGridEl = pixelGridRef.current;
@@ -70,10 +78,7 @@ function PixelTransition({
     gsap.to(pixels, {
       display: 'block',
       duration: 0,
-      stagger: {
-        each: staggerDuration,
-        from: 'random'
-      }
+      stagger: { each: staggerDuration, from: 'random' },
     });
 
     delayedCallRef.current = gsap.delayedCall(animationStepDuration, () => {
@@ -85,10 +90,7 @@ function PixelTransition({
       display: 'none',
       duration: 0,
       delay: animationStepDuration,
-      stagger: {
-        each: staggerDuration,
-        from: 'random'
-      }
+      stagger: { each: staggerDuration, from: 'random' },
     });
   };
 
@@ -124,9 +126,7 @@ function PixelTransition({
     >
       <div style={{ paddingTop: aspectRatio }} />
 
-      <div className="absolute inset-0 w-full h-full">
-        {firstContent}
-      </div>
+      <div className="absolute inset-0 w-full h-full">{firstContent}</div>
 
       <div
         ref={activeRef}
